@@ -2,27 +2,32 @@ import numpy as np
 import networkx as nx
 import itertools
 
-def next_vertex_state(J, state, alive_rule=1, dead_rule=1):
-    n = len(J)
-    alive = state.copy()
-    dead = list(set(range(n)).difference(set(alive)))
+def next_vertex_state(J, state, alive_rule=1, dead_rule=1, rep_rule=1):
+	n = len(J)
+	alive = state.copy()
+	dead = list(set(range(n)).difference(set(alive)))
 
-    if len(alive) == 0:
-        return alive
-    else:
-        new_alive = []
-        new_dead = []
+	if len(alive) == 0:
+		return alive
+	else:
+		new_alive = []
+		new_dead = []
 
-        for node in range(n):
-            neighbors_alive = sum([J[node][i] for i in alive])
-            neighbors_dead = sum([J[node][i] for i in dead])
+		for node in range(n):
+			neighbors_alive = sum([J[node][i] for i in alive])
+			neighbors_dead = sum([J[node][i] for i in dead])			
 
-            if (neighbors_alive >= alive_rule) and (neighbors_dead >= dead_rule):
-                new_alive.append(node)
-            else:
-                new_dead.append(node)
-        
-        return new_alive
+			if node in alive:
+				if (neighbors_alive >= alive_rule) and (neighbors_dead >= dead_rule):
+					new_alive.append(node)
+				else:
+					new_dead.append(node)
+			elif (neighbors_alive == rep_rule):
+				new_alive.append(node)
+			else:
+				new_dead.append(node)		
+
+		return new_alive
 
 def next_value_state(J, values, all_states):    
 	
@@ -177,7 +182,21 @@ def depth(G):
 				depth[node] += 1
 			states[node].append(next_node_state)
 
-	return depth	
+	return depth
+
+def if_dies(G, state):
+	J = nx.adjacency_matrix(G).todense().tolist()
+	states = [set(state)]
+
+	while True:
+		state = set(next_vertex_state(J, list(states[-1])))
+		
+		if len(state) == 0:
+			return True
+		elif state in states:
+			return False
+		else:
+			states.append(state)
 
 def depth_features(G, k=1):
 	J = nx.adjacency_matrix(G).todense().tolist()
